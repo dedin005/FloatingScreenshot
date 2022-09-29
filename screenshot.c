@@ -6,7 +6,7 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 
-#define CLICK 0b00000000000000000000001000000000
+#define CLICK 256
 
 int main(int argc, char *argv[])
 {
@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
         photoRunner = argv[2];
     }
 
-    Display *display = XOpenDisplay((char *)NULL);
+    Display *display = XOpenDisplay(None);
     Window window_returned;
 
     XGrabPointer(
@@ -43,17 +43,17 @@ int main(int argc, char *argv[])
     while (1)
     {
         XQueryPointer(
-            display, XRootWindow(display, 0),
+            display, DefaultRootWindow(display),
             &window_returned, &window_returned,
             &root_x, &root_y, &win_x, &win_y,
             &mask);
-        if (mask & 256 && !pressed)
+        if (mask & CLICK && !pressed)
         {
             start_x = root_x;
             start_y = root_y;
             pressed = 1;
         }
-        else if (pressed && !(mask & 256))
+        else if (pressed && !(mask & CLICK))
         {
             stop_x = root_x;
             stop_y = root_y;
@@ -63,28 +63,30 @@ int main(int argc, char *argv[])
 
     XUngrabPointer(display, CurrentTime);
 
-    uint64_t x = start_x > stop_x ? stop_x : start_x;
-    uint64_t y = start_y > stop_y ? stop_y : start_y;
+    uint64_t x = start_x > stop_x ? stop_x : start_x; // y ^ ((x ^ y) & -(x < y)) => min
+    uint64_t y = start_y > stop_y ? stop_y : start_y; // y ^ ((x ^ y) & -(x < y)) => min
 
     uint64_t width = start_x - stop_x < 0 ? stop_x - start_x : start_x - stop_x;
     uint64_t height = start_y - stop_y < 0 ? stop_y - start_y : start_y - stop_y;
 
-    XImage *sc = XGetImage(display,
-                           XRootWindow(display, XDefaultScreen(display)),
-                           x,
-                           y,
-                           width,
-                           height,
-                           AllPlanes,
-                           ZPixmap);
-
-    XCloseDisplay(display);
+    XImage *sc = XGetImage(
+        display,
+        DefaultRootWindow(display),
+        x,
+        y,
+        width,
+        height,
+        AllPlanes,
+        ZPixmap);
 
     if (imageToPPM(sc, argv[1]))
     {
-        printf("An internal error occurred.\n");
+        printf("An error occurred while trying to create the screenshot.\n");
+        XCloseDisplay(display);
         return 1;
     }
+
+    XCloseDisplay(display);
 
     pid_t child = fork();
     if (!child)
@@ -92,7 +94,7 @@ int main(int argc, char *argv[])
         // child
         execlp(photoRunner, photoRunner, argv[1], NULL);
     }
-    if (child < 0)
+    else if (child < 0)
     {
         // error
         printf("An error occurred while trying to open screenshot.\n");
