@@ -1,6 +1,7 @@
 #include "helperFunctions.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
@@ -11,8 +12,13 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Error, please enter the output filename (.ppm extension)!\n");
+        printf("Usage:\n  %s <outputFilename>.ppm [Photo Viewer]\n", argv[0]);
         return 1;
+    }
+    char *photoRunner = "feh";
+    if (argc > 2)
+    {
+        photoRunner = argv[2];
     }
 
     Display *display = XOpenDisplay((char *)NULL);
@@ -29,17 +35,18 @@ int main(int argc, char *argv[])
         XCreateFontCursor(display, XC_crosshair),
         CurrentTime);
 
-    int start_x,
-        start_y, stop_x, stop_y, root_x, root_y, win_x, win_y;
+    int start_x, start_y, stop_x, stop_y, root_x, root_y, win_x, win_y;
 
     uint8_t pressed = 0;
 
     uint32_t mask;
     while (1)
     {
-        XQueryPointer(display, XRootWindow(display, 0),
-                      &window_returned, &window_returned, &root_x,
-                      &root_y, &win_x, &win_y, &mask);
+        XQueryPointer(
+            display, XRootWindow(display, 0),
+            &window_returned, &window_returned,
+            &root_x, &root_y, &win_x, &win_y,
+            &mask);
         if (mask & 256 && !pressed)
         {
             start_x = root_x;
@@ -75,8 +82,23 @@ int main(int argc, char *argv[])
 
     if (imageToPPM(sc, argv[1]))
     {
-        printf("An internal error occurred.");
+        printf("An internal error occurred.\n");
         return 1;
     }
+
+    pid_t child = fork();
+    if (!child)
+    {
+        // child
+        execlp(photoRunner, photoRunner, argv[1], NULL);
+    }
+    if (child < 0)
+    {
+        // error
+        printf("An error occurred while trying to open screenshot.\n");
+        printf("You can open it at %s.\n", argv[1]);
+        return 1;
+    }
+
     return 0;
 }
