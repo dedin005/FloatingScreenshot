@@ -71,3 +71,31 @@ int imageToPPM(XImage *img, char *filename)
 
     return 0;
 }
+
+int dimImage(XImage *img)
+{
+    if (!img)
+    {
+        return 1;
+    }
+
+    uint64_t red_mask = img->red_mask;
+    uint64_t blue_mask = img->blue_mask;
+    uint64_t green_mask = img->green_mask;
+
+    for (int i = 0; i < img->width; i++)
+    {
+        for (int j = 0; j < img->height; j++)
+        {
+            uint64_t p = XGetPixel(img, i, j);
+            uint8_t red = (p & red_mask) >> 16;
+            uint8_t green = (p & green_mask) >> 8;
+            uint8_t blue = (p & blue_mask);
+            red = red >> 1;
+            green = green >> 1;
+            blue = blue >> 1;
+            XPutPixel(img, i, j, (((uint64_t)red) << 16) | (((uint64_t)green) << 8) | ((uint64_t)blue));
+        }
+    }
+    return 0;
+}

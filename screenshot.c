@@ -22,18 +22,38 @@ int main(int argc, char *argv[])
     }
 
     Display *display = XOpenDisplay(None);
-    Window window_returned;
+    Window window_returned, defaultRoot = DefaultRootWindow(display);
+    GC gc = XCreateGC(display, defaultRoot, 0, NULL);
 
     XGrabPointer(
         display,
-        DefaultRootWindow(display),
+        defaultRoot,
         False,
         ButtonPressMask,
         GrabModeAsync,
         GrabModeAsync,
-        DefaultRootWindow(display),
+        defaultRoot,
         XCreateFontCursor(display, XC_crosshair),
         CurrentTime);
+
+    // Take picture of entire screen
+    XImage *fullscreen = XGetImage(
+        display,
+        defaultRoot,
+        0,
+        0,
+        DisplayWidth(display, XDefaultScreen(display)),
+        DisplayHeight(display, XDefaultScreen(display)),
+        AllPlanes,
+        ZPixmap);
+
+    if (dimImage(fullscreen))
+    {
+        printf("Image failed to dim, using original.\n");
+    }
+
+    XMapWindow(display, defaultRoot);
+    XPutImage(display, defaultRoot, gc, fullscreen, 0, 0, 0, 0, fullscreen->width, fullscreen->height);
 
     int start_x, start_y, stop_x, stop_y, root_x, root_y, win_x, win_y;
 
@@ -43,7 +63,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         XQueryPointer(
-            display, DefaultRootWindow(display),
+            display, defaultRoot,
             &window_returned, &window_returned,
             &root_x, &root_y, &win_x, &win_y,
             &mask);
@@ -71,7 +91,7 @@ int main(int argc, char *argv[])
 
     XImage *sc = XGetImage(
         display,
-        DefaultRootWindow(display),
+        defaultRoot,
         x,
         y,
         width,
