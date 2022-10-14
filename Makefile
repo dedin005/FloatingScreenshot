@@ -3,7 +3,7 @@ INCLUDE:=-lX11 -lpng
 CFLAGS:=-Ofast -s
 OBJ:=helperFunctions.o screenshot.o
 EXE:=screenshot
-FILENAME:=outfile.ppm
+FILENAME:=outfile.png
 PHOTO_DISPLAY:=feh
 
 .PHONY: all run

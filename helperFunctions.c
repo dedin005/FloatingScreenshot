@@ -7,6 +7,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <png.h>
+#include <time.h>
 
 /*
  * filename: char* => null terminated string that defines the output filename; should end with the extension .ppm
@@ -45,6 +46,18 @@ int outputImagePNG(char *filename, uint8_t **data, int width, int height)
         compression_type = PNG_COMPRESSION_TYPE_DEFAULT,
         filter_method = PNG_FILTER_TYPE_DEFAULT;
     png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth, color_type, interlace_type, compression_type, filter_method);
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    png_time time_p;
+    time_p.day = tm.tm_mday;
+    time_p.month = tm.tm_mon + 1;
+    time_p.year = tm.tm_year + 1900;
+    time_p.hour = tm.tm_hour;
+    time_p.minute = tm.tm_min;
+    time_p.second = tm.tm_sec;
+    png_set_tIME(png_ptr, info_ptr, &time_p);
+
     png_write_info(png_ptr, info_ptr);
     png_write_image(png_ptr, (uint8_t **)data);
     png_write_end(png_ptr, info_ptr);
