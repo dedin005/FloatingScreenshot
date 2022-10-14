@@ -24,7 +24,7 @@ $(EXE): $(OBJ)
 	$(CC) -c -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 .PHONY: clean
-clean: 
+clean:
 	rm -f $(EXE) *.o *.ppm *.png
 
 .PHONY: run
@@ -32,9 +32,9 @@ run: png
 
 ppm: FILENAME:=outfile.ppm 
 ppm: LDFLAGS:=-DPPM
-ppm: $(EXE)
+ppm: clean $(EXE)
 	./$(EXE) $(FILENAME) $(PHOTO_DISPLAY)
 
 png: FILENAME:=outfile.png
-png: $(EXE)
+png: clean $(EXE)
 	./$(EXE) $(FILENAME) $(PHOTO_DISPLAY)
