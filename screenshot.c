@@ -8,13 +8,25 @@
 
 #define CLICK 256
 
+// #define PPM 1 // uncomment for PPM output always
+
 int main(int argc, char *argv[])
 {
+#ifdef PPM
+    if (argc < 2)
+    {
+        printf("Usage:\n  %s <outputFilename>.ppm [Photo Viewer]\n", argv[0]);
+        return 1;
+    }
+#endif
+
+#ifndef PPM
     if (argc < 2)
     {
         printf("Usage:\n  %s <outputFilename>.png [Photo Viewer]\n", argv[0]);
         return 1;
     }
+#endif
 
     char *photoRunner = "feh";
     if (argc > 2)
@@ -100,12 +112,23 @@ int main(int argc, char *argv[])
         AllPlanes,
         ZPixmap);
 
+#ifndef PPM
     if (imageToPNG(sc, argv[1]))
     {
         printf("An error occurred while trying to create the screenshot.\n");
         XCloseDisplay(display);
         return 1;
     }
+#endif
+
+#ifdef PPM
+    if (imageToPPM(sc, argv[1]))
+    {
+        printf("An error occurred while trying to create the screenshot.\n");
+        XCloseDisplay(display);
+        return 1;
+    }
+#endif
 
     XCloseDisplay(display);
 
