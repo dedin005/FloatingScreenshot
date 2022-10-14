@@ -12,9 +12,10 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Usage:\n  %s <outputFilename>.ppm [Photo Viewer]\n", argv[0]);
+        printf("Usage:\n  %s <outputFilename>.png [Photo Viewer]\n", argv[0]);
         return 1;
     }
+
     char *photoRunner = "feh";
     if (argc > 2)
     {
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
         AllPlanes,
         ZPixmap);
 
-    if (imageToPPM(sc, argv[1]))
+    if (imageToPNG(sc, argv[1]))
     {
         printf("An error occurred while trying to create the screenshot.\n");
         XCloseDisplay(display);

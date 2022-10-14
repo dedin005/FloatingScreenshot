@@ -1,5 +1,5 @@
 CC:=gcc
-INCLUDE:=-lX11
+INCLUDE:=-lX11 -lpng
 CFLAGS:=-Ofast -s
 OBJ:=helperFunctions.o screenshot.o
 EXE:=screenshot
@@ -20,7 +20,7 @@ $(EXE): $(OBJ)
 	$(CC) -c -o $@ $^ $(CFLAGS)
 
 clean: 
-	rm -f $(EXE) *.o *.ppm
+	rm -f $(EXE) *.o *.ppm *.png
 
 run: $(EXE)
 	./$(EXE) $(FILENAME) $(PHOTO_DISPLAY)
