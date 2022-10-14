@@ -8,13 +8,26 @@
 
 #define CLICK 256
 
+// #define PPM 1 // uncomment for PPM output always
+
 int main(int argc, char *argv[])
 {
+#ifdef PPM
     if (argc < 2)
     {
         printf("Usage:\n  %s <outputFilename>.ppm [Photo Viewer]\n", argv[0]);
         return 1;
     }
+#endif
+
+#ifndef PPM
+    if (argc < 2)
+    {
+        printf("Usage:\n  %s <outputFilename>.png [Photo Viewer]\n", argv[0]);
+        return 1;
+    }
+#endif
+
     char *photoRunner = "feh";
     if (argc > 2)
     {
@@ -22,18 +35,38 @@ int main(int argc, char *argv[])
     }
 
     Display *display = XOpenDisplay(None);
-    Window window_returned;
+    Window window_returned, defaultRoot = DefaultRootWindow(display);
+    GC gc = XCreateGC(display, defaultRoot, 0, NULL);
 
     XGrabPointer(
         display,
-        DefaultRootWindow(display),
+        defaultRoot,
         False,
         ButtonPressMask,
         GrabModeAsync,
         GrabModeAsync,
-        DefaultRootWindow(display),
+        defaultRoot,
         XCreateFontCursor(display, XC_crosshair),
         CurrentTime);
+
+    // Take picture of entire screen
+    XImage *fullscreen = XGetImage(
+        display,
+        defaultRoot,
+        0,
+        0,
+        DisplayWidth(display, XDefaultScreen(display)),
+        DisplayHeight(display, XDefaultScreen(display)),
+        AllPlanes,
+        ZPixmap);
+
+    if (dimImage(fullscreen))
+    {
+        printf("Image failed to dim, using original.\n");
+    }
+
+    XMapWindow(display, defaultRoot);
+    XPutImage(display, defaultRoot, gc, fullscreen, 0, 0, 0, 0, fullscreen->width, fullscreen->height);
 
     int start_x, start_y, stop_x, stop_y, root_x, root_y, win_x, win_y;
 
@@ -43,7 +76,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         XQueryPointer(
-            display, DefaultRootWindow(display),
+            display, defaultRoot,
             &window_returned, &window_returned,
             &root_x, &root_y, &win_x, &win_y,
             &mask);
@@ -71,7 +104,7 @@ int main(int argc, char *argv[])
 
     XImage *sc = XGetImage(
         display,
-        DefaultRootWindow(display),
+        defaultRoot,
         x,
         y,
         width,
@@ -79,12 +112,23 @@ int main(int argc, char *argv[])
         AllPlanes,
         ZPixmap);
 
+#ifndef PPM
+    if (imageToPNG(sc, argv[1]))
+    {
+        printf("An error occurred while trying to create the screenshot.\n");
+        XCloseDisplay(display);
+        return 1;
+    }
+#endif
+
+#ifdef PPM
     if (imageToPPM(sc, argv[1]))
     {
         printf("An error occurred while trying to create the screenshot.\n");
         XCloseDisplay(display);
         return 1;
     }
+#endif
 
     XCloseDisplay(display);
 
